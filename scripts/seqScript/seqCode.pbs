@@ -8,23 +8,49 @@
 
 module load gcc91
 
-cd $PBS_O_WORKDIR
+echo "PBS workdir: $PBS_O_WORKDIR"
 
-gcc -std=c99 /home/alessandro.gremes/parco/sequentialCode/seqCode.c -o seqCode
+# Calcola la root del repository (cartella sopra scripts/seqScript)
+REPO_DIR="$(dirname $(dirname $PBS_O_WORKDIR))"
+echo "REPO_DIR = $REPO_DIR"
 
-MATRIX_DIR="/home/alessandro.gremes/parco/mtx"
-OUTFILE="/home/alessandro.gremes/git/PARCO-Computing-2026-242330/results/seqResults/benchMarking/results_sequential.csv"
+SRC="$REPO_DIR/src/sequentialCode"
+MTX="$REPO_DIR/mtx"
+OUTDIR="$REPO_DIR/results/seqResults/benchMarking"
 
-mkdir -p $(dirname "$OUTFILE")
+mkdir -p "$OUTDIR"
+OUTFILE="$OUTDIR/results_sequential.csv"
+
+cd "$SRC" || { echo "Cannot cd to $SRC"; exit 1; }
+
+# Compile
+gcc -std=c99 seqCode.c -o seqCode
+
+# Default loops = 1 if not passed via qsub
+LOOPS="${L:-1}"
 
 echo "matrix,run,time_ms,checksum" > "$OUTFILE"
 
-for matrix in $(find "$MATRIX_DIR" -type f -name "*.mtx"); do
-    for ((i=1; i<=${L:-1}; i++)); do
-        OUTPUT=$(./seqCode "$matrix")
-        TIME=$(echo "$OUTPUT" | grep "SpMV time" | awk '{print $3}')
-        CHECKSUM=$(echo "$OUTPUT" | grep "Checksum" | awk '{print $2}')
-        echo "$(basename "$matrix"),$i,$TIME,$CHECKSUM" >> "$OUTFILE"
+for DIR in "$MTX"/*; do
+    
+    [ -d "$DIR" ] || continue
+    
+    base=$(basename "$DIR")
+    matrix="$DIR/$base.mtx"
+
+    [ -f "$matrix" ] || continue
+
+    for ((i=1; i<=LOOPS; i++)); do
+
+        OUT=$("./seqCode" "$matrix")
+        TIME=$(echo "$OUT" | grep "SpMV time" | awk '{print $3}')
+        CHECKSUM=$(echo "$OUT" | grep "Checksum" | awk '{print $2}')
+
+        echo "$base,$i,$TIME,$CHECKSUM" >> "$OUTFILE"
     done
+
 done
+
+echo "DONE."
+
 

@@ -7,24 +7,43 @@
 #PBS -l walltime=06:00:00
 
 module load valgrind-3.15.0
+module load gcc91
 
-# Default value if L not provided
-L=${L:-1}
+echo "PBS workdir: $PBS_O_WORKDIR"
 
-EXEC="/home/alessandro.gremes/git/PARCO-Computing-2026-242330/src/sequentialCode/seqCode"
-MTX_DIR="/home/alessandro.gremes/git/PARCO-Computing-2026-242330/mtx"
-OUTDIR="/home/alessandro.gremes/git/PARCO-Computing-2026-242330/results/seqResults/benchMarkingCache"
+# Repository root = directory sopra scripts/seqScript
+REPO_DIR="$(dirname $(dirname $PBS_O_WORKDIR))"
+echo "REPO_DIR = $REPO_DIR"
+
+SRC="$REPO_DIR/src/sequentialCode"
+MTX_DIR="$REPO_DIR/mtx"
+OUTDIR="$REPO_DIR/results/seqResults/benchMarkingCache"
 
 mkdir -p "$OUTDIR"
 
-echo "Running Valgrind Cachegrind with L = $L iterations"
+cd "$SRC" || { echo "Cannot cd to $SRC"; exit 1; }
 
-# Loop over all matrices
-for matrix in $(find "$MTX_DIR" -type f -name "*.mtx"); do
-    base=$(basename "$matrix" .mtx)
+# Compile executable
+gcc -std=c99 seqCode.c -o seqCode
+EXEC="$SRC/seqCode"
+
+# Default loops = 1 if L not provided
+LOOPS="${L:-1}"
+
+echo "Running Valgrind Cachegrind with L = $LOOPS iterations"
+
+for DIR in "$MTX_DIR"/*; do
+    
+    [ -d "$DIR" ] || continue
+    base=$(basename "$DIR")
+    matrix="$DIR/$base.mtx"
+
+    [ -f "$matrix" ] || continue
+
     echo "Processing matrix: $base"
 
-    for ((i=1; i<=L; i++)); do
+    for ((i=1; i<=LOOPS; i++)); do
+
         OUTCG="${OUTDIR}/cachegrind_${base}_run${i}.out"
         OUTTXT="${OUTDIR}/valgrind_${base}_run${i}.txt"
 
@@ -36,7 +55,7 @@ for matrix in $(find "$MTX_DIR" -type f -name "*.mtx"); do
         IL1=$(grep "LLi misses:" "$OUTCG" | awk '{print $4}')
         D1=$(grep "D1  misses:"  "$OUTCG" | awk '{print $4}')
         DL1=$(grep "LLd misses:" "$OUTCG" | awk '{print $4}')
-        LL=$(grep  "LL  misses:" "$OUTCG" | awk '{print $4}')
+        LL=$(grep "LL  misses:" "$OUTCG" | awk '{print $4}')
 
         {
             echo "Matrix: $base"
@@ -47,8 +66,9 @@ for matrix in $(find "$MTX_DIR" -type f -name "*.mtx"); do
             echo "DL1_misses: $DL1"
             echo "LL_misses:  $LL"
         } > "$OUTTXT"
+
     done
 done
 
-echo "Completed all matrices."
+echo "COMPLETED."
 
