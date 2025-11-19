@@ -1,0 +1,54 @@
+#!/bin/bash
+#PBS -N valgrind_seq
+#PBS -q short_cpuQ
+#PBS -o valgrind_seq.out
+#PBS -e valgrind_seq.err
+#PBS -l select=1:ncpus=1:mem=64gb
+#PBS -l walltime=06:00:00
+
+module load valgrind-3.15.0
+
+# Default value if L not provided
+L=${L:-1}
+
+EXEC="/home/alessandro.gremes/git/PARCO-Computing-2026-242330/src/sequentialCode/seqCode"
+MTX_DIR="/home/alessandro.gremes/git/PARCO-Computing-2026-242330/mtx"
+OUTDIR="/home/alessandro.gremes/git/PARCO-Computing-2026-242330/results/seqResults/benchMarkingCache"
+
+mkdir -p "$OUTDIR"
+
+echo "Running Valgrind Cachegrind with L = $L iterations"
+
+# Loop over all matrices
+for matrix in $(find "$MTX_DIR" -type f -name "*.mtx"); do
+    base=$(basename "$matrix" .mtx)
+    echo "Processing matrix: $base"
+
+    for ((i=1; i<=L; i++)); do
+        OUTCG="${OUTDIR}/cachegrind_${base}_run${i}.out"
+        OUTTXT="${OUTDIR}/valgrind_${base}_run${i}.txt"
+
+        valgrind --tool=cachegrind \
+                 --cachegrind-out-file="$OUTCG" \
+                 "$EXEC" "$matrix" &> /dev/null
+
+        I1=$(grep "I1  misses:"  "$OUTCG" | awk '{print $4}')
+        IL1=$(grep "LLi misses:" "$OUTCG" | awk '{print $4}')
+        D1=$(grep "D1  misses:"  "$OUTCG" | awk '{print $4}')
+        DL1=$(grep "LLd misses:" "$OUTCG" | awk '{print $4}')
+        LL=$(grep  "LL  misses:" "$OUTCG" | awk '{print $4}')
+
+        {
+            echo "Matrix: $base"
+            echo "Run: $i"
+            echo "I1_misses:  $I1"
+            echo "IL1_misses: $IL1"
+            echo "D1_misses:  $D1"
+            echo "DL1_misses: $DL1"
+            echo "LL_misses:  $LL"
+        } > "$OUTTXT"
+    done
+done
+
+echo "Completed all matrices."
+

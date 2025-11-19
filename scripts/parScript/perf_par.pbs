@@ -1,0 +1,70 @@
+#!/bin/bash
+#PBS -N perf_par
+#PBS -q short_cpuQ
+#PBS -l select=1:ncpus=64:mem=64gb
+#PBS -l walltime=06:00:00
+#PBS -o perf_par.out
+#PBS -e perf_par.err
+
+module load perf
+module load gcc91
+
+cd /home/alessandro.gremes/git/PARCO-Computing-2026-242330/src/parallelCode
+gcc -fopenmp -std=c99 parCode.c -o parCode
+
+# Check L (loops)
+if [ -z "$L" ]; then
+    echo "ERROR: Missing L loops variable. Use: qsub -v L=10 perf_par.pbs"
+    exit 1
+fi
+export LOOPS=$L
+
+MATRIX_DIR=/home/alessandro.gremes/git/PARCO-Computing-2026-242330/mtx
+OUTFILE=/home/alessandro.gremes/git/PARCO-Computing-2026-242330/results/parResults/benchMarkingCache/perf_parallel.csv
+
+echo "matrix,threads,schedule,chunk,cycles,instructions,cache_misses,branches,branch_misses" > "$OUTFILE"
+
+THREADS=(2 4 8 16 32 64)
+SCHEDULES=("static" "dynamic" "guided" "auto")
+CHUNKS=(10 100 1000)
+
+for matrix in $(find "$MATRIX_DIR" -type f -name "*.mtx"); do
+    base=$(basename "$matrix" .mtx)
+
+    for t in "${THREADS[@]}"; do
+        export OMP_NUM_THREADS=$t
+
+        for sched in "${SCHEDULES[@]}"; do
+
+            if [ "$sched" == "auto" ]; then
+
+                export OMP_SCHEDULE="auto"
+
+                perf stat -x, -e cycles,instructions,cache-misses,branches,branch-misses \
+                    ./parCode "$matrix" 2> tmp_perf.txt
+
+                vals=$(cut -d',' -f1 tmp_perf.txt | paste -sd"," -)
+                echo "$base,$t,auto,auto,$vals" >> "$OUTFILE"
+
+            else
+
+                for chunk in "${CHUNKS[@]}"; do
+
+                    export OMP_SCHEDULE="$sched,$chunk"
+
+                    perf stat -x, -e cycles,instructions,cache-misses,branches,branch-misses \
+                        ./parCode "$matrix" 2> tmp_perf.txt
+
+                    vals=$(cut -d',' -f1 tmp_perf.txt | paste -sd"," -)
+                    echo "$base,$t,$sched,$chunk,$vals" >> "$OUTFILE"
+
+                done
+            fi
+
+        done
+    done
+done
+
+rm -f tmp_perf.txt
+echo "DONE."
+

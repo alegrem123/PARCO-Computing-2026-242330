@@ -1,1 +1,79 @@
-ciao ciao	
+#!/bin/bash
+#PBS -N parCode
+#PBS -q short_cpuQ
+#PBS -o parCode.out
+#PBS -e parCode.err
+#PBS -l select=1:ncpus=64:mem=64gb
+#PBS -l walltime=06:00:00
+
+module load gcc91
+
+echo "PBS working directory: $PBS_O_WORKDIR"
+
+# Repository root = directory sopra scripts/parScript
+REPO_DIR="$(dirname $(dirname $PBS_O_WORKDIR))"
+echo "REPO_DIR = $REPO_DIR"
+
+SRC="$REPO_DIR/src/parallelCode"
+MTX="$REPO_DIR/mtx"
+OUTDIR="$REPO_DIR/results/parResults/benchMarking"
+
+mkdir -p "$OUTDIR"
+
+cd "$SRC" || { echo "Cannot cd to $SRC"; exit 1; }
+
+gcc -std=c99 -fopenmp parCode.c -o parCode
+EXEC="$SRC/parCode"
+
+export OMP_PROC_BIND=close
+export OMP_PLACES=cores
+
+if [ -z "$L" ]; then
+    echo "ERROR: missing loop count L. Use: qsub -v L=10 parCode.pbs"
+    exit 1
+fi
+
+export LOOPS=$L
+
+THREADS=(2 4 8 16 32 64)
+SCHEDULES=("static" "dynamic" "guided" "auto")
+CHUNKS=(10 100 1000)
+
+for T in "${THREADS[@]}"; do
+    export OMP_NUM_THREADS=$T
+
+    OUTFILE="$OUTDIR/results_parallel_${T}thr.csv"
+    echo "matrix,schedule,chunk,time_ms,threads" > "$OUTFILE"
+
+    for DIR in "$MTX"/*; do
+        [ -d "$DIR" ] || continue
+        BASE=$(basename "$DIR")
+        MATRIX="$DIR/$BASE.mtx"
+
+        [ -f "$MATRIX" ] || continue
+
+        for SCHED in "${SCHEDULES[@]}"; do
+
+            if [[ "$SCHED" == "auto" ]]; then
+                export OMP_SCHEDULE="auto"
+
+                $EXEC "$MATRIX" | grep "SpMV time" | awk \
+                  -v M="$BASE" -v S="$SCHED" -v C="auto" -v T="$T" \
+                  '{print M "," S "," C "," $3 "," T}' >> "$OUTFILE"
+
+            else
+                for CH in "${CHUNKS[@]}"; do
+                    export OMP_SCHEDULE="$SCHED,$CH"
+
+                    $EXEC "$MATRIX" | grep "SpMV time" | awk \
+                      -v M="$BASE" -v S="$SCHED" -v C="$CH" -v T="$T" \
+                      '{print M "," S "," C "," $3 "," T}' >> "$OUTFILE"
+                done
+            fi
+
+        done
+    done
+done
+
+echo "DONE."
+

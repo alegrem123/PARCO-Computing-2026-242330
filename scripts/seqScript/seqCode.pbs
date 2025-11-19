@@ -1,1 +1,30 @@
-ciao ciao
+#!/bin/bash
+#PBS -N seqCode
+#PBS -o seqCode.out
+#PBS -e seqCode.err
+#PBS -q short_cpuQ
+#PBS -l select=1:ncpus=1:mem=64gb
+#PBS -l walltime=06:00:00
+
+module load gcc91
+
+cd $PBS_O_WORKDIR
+
+gcc -std=c99 /home/alessandro.gremes/parco/sequentialCode/seqCode.c -o seqCode
+
+MATRIX_DIR="/home/alessandro.gremes/parco/mtx"
+OUTFILE="/home/alessandro.gremes/git/PARCO-Computing-2026-242330/results/seqResults/benchMarking/results_sequential.csv"
+
+mkdir -p $(dirname "$OUTFILE")
+
+echo "matrix,run,time_ms,checksum" > "$OUTFILE"
+
+for matrix in $(find "$MATRIX_DIR" -type f -name "*.mtx"); do
+    for ((i=1; i<=${L:-1}; i++)); do
+        OUTPUT=$(./seqCode "$matrix")
+        TIME=$(echo "$OUTPUT" | grep "SpMV time" | awk '{print $3}')
+        CHECKSUM=$(echo "$OUTPUT" | grep "Checksum" | awk '{print $2}')
+        echo "$(basename "$matrix"),$i,$TIME,$CHECKSUM" >> "$OUTFILE"
+    done
+done
+
