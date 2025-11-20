@@ -171,34 +171,33 @@ gcc -std=c99 -fopenmp parCode.c -o parCode
 
 ### 6.1 Sequential Benchmarking (10 runs)
 
-
+'''bash
 cd scripts/seqScript
 qsub -v L=10 seqCode.pbs
-
+'''
 
 ### 6.2 Sequential Cache Analysis (Valgrind)
 
-
+'''bash
 cd scripts/seqScript
 qsub -v L=1 valgrind_seq.pbs
-
+'''
 
 ### 6.3 Parallel Benchmarking (OMP)
 
-
+'''bash
 cd src/parallelCode
 gcc -std=c99 -fopenmp parCode.c -o parCode
-
 cd scripts/parScript
 qsub -v L=10 parCode.pbs
-
+'''
 
 ### 6.4 Parallel Performance Counters (perf)
 
-
+'''bash
 cd scripts/parScript
 qsub -v L=1 perf_par.pbs
-
+'''
 
 ---
 
