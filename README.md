@@ -25,9 +25,6 @@ This project implements and evaluates Sparse Matrix–Vector Multiplication (SpM
   - Performance counters through `perf`
   - Cache behaviour through Valgrind Cachegrind
 
-The project strictly follows the UniTN guidelines from  
-**“Introduction to Parallel Computing – Guidelines for methodology, reproducibility and clear reporting"**  
-by Laura del Río Martín.
 
 ---
 
