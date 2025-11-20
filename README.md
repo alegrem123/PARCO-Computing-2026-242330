@@ -143,24 +143,25 @@ L3 cache: 36 MB
 
 ### 5.2 Software Modules
 
-
+```text
 gcc91
 valgrind-3.15.0
 perf
-
+```
 
 ### 5.3 Compilation
+
 Sequential:
 
-
+```text
 gcc -std=c99 seqCode.c -o seqCode
-
+```
 
 Parallel:
-
-
+```text
+module load gcc91
 gcc -std=c99 -fopenmp parCode.c -o parCode
-
+```
 
 ---
 
