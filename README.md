@@ -256,30 +256,20 @@ Since GitHub limits files to 100 MB, users must download the matrices manually:
 
 ```bash
 cd mtx
-wget https://suitesparse-collection-website.herokuapp.com/MM/Gupta/gupta2.tar.gz -O gupta2.tar.gz
-tar -xf gupta2.tar.gz
-mkdir -p mtx/gupta2
-mv gupta2/gupta2.mtx mtx/gupta2/
-rm -rf gupta2 gupta2.tar.gz
-wget https://suitesparse-collection-website.herokuapp.com/MM/Williams/consph.tar.gz -O consph.tar.gz
-tar -xf consph.tar.gz
-mkdir -p mtx/consph
-mv consph/consph.mtx mtx/consph/
-rm -rf consph consph.tar.gz
-wget https://suitesparse-collection-website.herokuapp.com/MM/BenElechi/BenElechi1.tar.gz -O BenElechi1.tar.gz
-tar -xf BenElechi1.tar.gz
-mkdir -p mtx/BenElechi1
-mv BenElechi1/BenElechi1.mtx mtx/BenElechi1/
-rm -rf BenElechi1 BenElechi1.tar.gz
-wget https://suitesparse-collection-website.herokuapp.com/MM/Boeing/pwtk.tar.gz -O pwtk.tar.gz
-tar -xf pwtk.tar.gz
-mkdir -p mtx/pwtk
-mv pwtk/pwtk.mtx mtx/pwtk/
-rm -rf pwtk pwtk.tar.gz
-wget https://suitesparse-collection-website.herokuapp.com/MM/Bova/rma10.tar.gz -O rma10.tar.gz
-tar -xf rma10.tar.gz
-mkdir -p mtx/rma10
-mv rma10/rma10.mtx mtx/rma10/
-rm -rf rma10 rma10.tar.gz
+for url in \
+"https://suitesparse-collection-website.herokuapp.com/MM/Gupta/gupta2.tar.gz" \
+"https://suitesparse-collection-website.herokuapp.com/MM/Williams/consph.tar.gz" \
+"https://suitesparse-collection-website.herokuapp.com/MM/BenElechi/BenElechi1.tar.gz" \
+"https://suitesparse-collection-website.herokuapp.com/MM/Boeing/pwtk.tar.gz" \
+"https://suitesparse-collection-website.herokuapp.com/MM/Bova/rma10.tar.gz"
+do
+    name=$(basename "$url" .tar.gz)
+    wget "$url" -O "$name.tar.gz"
+    tar -xzf "$name.tar.gz"
+    mkdir -p "$name"
+    mv "$name/$name.mtx" "$name/"
+    rm -rf "$name.tar.gz"
+done
+
 
 ```
