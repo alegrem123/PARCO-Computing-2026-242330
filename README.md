@@ -107,6 +107,80 @@ fi
 
 echo "=== SETUP COMPLETE ==="
 ```
+## Running Locally (Full  Guide)
+1. Clone the repository
+```bash
+git clone https://github.com/alegrem123/PARCO-Computing-2026-242330.git
+cd PARCO-Computing-2026-242330
+```
+3. Download the SuiteSparse matrices
+```bash
+cd mtx
+```
+```bash
+for url in \
+  "https://suitesparse-collection-website.herokuapp.com/MM/HB/1138_bus.tar.gz" \
+  "https://suitesparse-collection-website.herokuapp.com/MM/BenElechi/BenElechi1.tar.gz" \
+  "https://suitesparse-collection-website.herokuapp.com/MM/Williams/consph.tar.gz" \
+  "https://suitesparse-collection-website.herokuapp.com/MM/Gupta/gupta2.tar.gz" \
+  "https://suitesparse-collection-website.herokuapp.com/MM/Boeing/pwtk.tar.gz" \
+  "https://suitesparse-collection-website.herokuapp.com/MM/Bova/rma10.tar.gz"
+do
+  fname=$(basename "$url")
+  dirname="${fname%.tar.gz}"
+  wget "$url"
+  tar -xzf "$fname"
+  rm "$fname"
+done
+
+cd ..
+```
+3. Compile locally
+
+Sequential:
+```bash
+gcc -std=c99 src/sequentialCode/seqCode.c -o seq
+```
+
+Parallel (OpenMP):
+```bash
+gcc -std=c99 -fopenmp src/parallelCode/parCode.c -o par
+```
+4. Run locally
+Sequential
+```bash
+./seq mtx/1138_bus/1138_bus.mtx
+```
+Parallel
+```bash
+export OMP_NUM_THREADS=8
+export OMP_SCHEDULE="static,10"
+./par mtx/1138_bus/1138_bus.mtx
+```
+
+5. Run all matrices
+
+Sequential
+```bash
+for m in mtx/*/*.mtx; do ./seq "$m"; done
+```
+
+Parallel
+```bash
+export OMP_NUM_THREADS=8
+export OMP_SCHEDULE="dynamic,100"
+for m in mtx/*/*.mtx; do ./par "$m"; done
+```
+Notes
+
+All runs use fixed seed: srand(42)
+
+Matrix file structure must be:
+```text
+mtx/<matrix_name>/<matrix_name>.mtx
+```
+
+For benchmarking, recommended: 10 runs for sequential, 1 warm-up + 10 timed for parallel.
 ---
 
 ## 2. Tasks and Objectives
