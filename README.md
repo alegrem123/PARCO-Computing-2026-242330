@@ -10,7 +10,7 @@
 ![Reproducibility](https://img.shields.io/badge/Reproducibility-Verified-success)
 ![Benchmarks](https://img.shields.io/badge/Benchmarks-10_runs_per_matrix-red)
 ![Matrices](https://img.shields.io/badge/Matrices-6_selected-purple)
-![License](https://img.shields.io/badge/License-Free-lightgrey)
+
 
 ---
 
@@ -260,10 +260,4 @@ wget https://sparse.tamu.edu/matrix/XYZ
 unzip MATRIX.zip
 mkdir -p mtx/MATRIX_NAME
 mv MATRIX_NAME.mtx mtx/MATRIX_NAME/
-
-
----
-
-## 12. License
-MIT License (or specify if needed).
 
