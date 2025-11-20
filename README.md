@@ -33,6 +33,22 @@ The following block can be copied as-is into any Linux terminal to fully reprodu
 
 - On local machines, PBS jobs are skipped automatically.
 - On HPC UniTN, PBS jobs are automatically submitted.
+- ### HPC Cluster Notes (UniTN)
+
+All batch jobs were executed on the **public queue `short_cpuQ`**, which provides:
+
+- Max walltime: **6 hours**
+- Max concurrent jobs: **30**
+- Access: free (public queue)
+- Suitable for: medium-size workloads and benchmarking runs
+
+This queue was selected because the project requires:
+- short-to-medium executions (< 6h),
+- multiple repeated runs (10× per matrix),
+- access to up to 64 CPU cores for OpenMP evaluation.
+
+The PBS scripts assume the following resources:
+
 
 Setup Script
 ```bash
