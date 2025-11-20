@@ -53,37 +53,45 @@ As required by the deliverable:
 ## 3. Repository Structure
 
 repo/
-│ README.md
+│
+├── README.md
 │
 ├── src/
-│ ├── sequentialCode/
-│ │ └── seqCode.c
-│ └── parallelCode/
-│ └── parCode.c
+│   ├── sequentialCode/
+│   │   └── seqCode.c
+│   └── parallelCode/
+│       └── parCode.c
 │
 ├── scripts/
-│ ├── seqScript/
-│ │ ├── seqCode.pbs
-│ │ ├── valgrind_seq.pbs
-│ │ └── outputs (.out/.err)
-│ └── parScript/
-│ ├── parCode.pbs
-│ ├── perf_par.pbs
-│ └── outputs (.out/.err)
+│   ├── seqScript/
+│   │   ├── seqCode.pbs
+│   │   ├── valgrind_seq.pbs
+│   │   └── outputs/          # .out / .err files
+│   │
+│   └── parScript/
+│       ├── parCode.pbs
+│       ├── perf_par.pbs
+│       └── outputs/          # .out / .err files
 │
 ├── results/
-│ ├── seqResults/
-│ │ ├── benchMarking/results_sequential.csv
-│ │ └── benchMarkingCache/valgrind_.csv
-│ └── parResults/
-│ ├── benchMarking/results_parallel_thr.csv
-│ └── benchMarkingCache/perf_parallel.csv
+│   ├── seqResults/
+│   │   ├── benchMarking/
+│   │   │   └── results_sequential.csv
+│   │   └── benchMarkingCache/
+│   │       └── valgrind_*.csv
+│   │
+│   └── parResults/
+│       ├── benchMarking/
+│       │   └── results_parallel_<thr>.csv
+│       └── benchMarkingCache/
+│           └── perf_parallel.csv
 │
 ├── plots/
-│ └── (generated locally: speedup, efficiency, scheduling comparison…)
+│   └── (generated locally: speedup, efficiency, scheduling comparison…)
 │
 └── mtx/
-└── matrix_name/matrix_name.mtx
+    └── <matrix_name>/
+        └── <matrix_name>.mtx
 
 
 > ⚠️ **Matrices >100 MB are not included in the repository** due to GitHub file size limits.  
