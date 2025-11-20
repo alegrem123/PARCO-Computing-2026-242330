@@ -130,7 +130,7 @@ Thread counts: **2, 4, 8, 16, 32, 64**.
 
 ### 5.1 Hardware — HPC UniTN Node
 
-
+```text
 Architecture: x86_64
 CPUs: 96 (Intel Xeon Gold 6252N @ 2.30GHz)
 Sockets: 4
@@ -139,7 +139,7 @@ NUMA nodes: 4
 L1 cache: 32 KB
 L2 cache: 1 MB
 L3 cache: 36 MB
-
+```
 
 ### 5.2 Software Modules
 
@@ -220,8 +220,6 @@ All matrices are from the SuiteSparse Matrix Collection:
 - Thread scaling 2→64  
 - Scheduling comparison  
 - **Speedup**, **parallel efficiency**, **90th percentile**
-
-Plots are generated locally using the Python utilities in `/plots` (not included in the HPC).
 
 ---
 
