@@ -204,12 +204,12 @@ All matrices are from the SuiteSparse Matrix Collection:
 
 | Matrix       | nnz | nrows | ncols | Notes / Sparsity |
 |--------------|-----|--------|--------|------------------|
-| 1138_bus     | ~2596 | 1138 | 1138 | Very sparse |
-| BenElechi1   | >100k | multi | multi | FEM structure |
-| consph        | 6M | 83k | 83k | denser |
-| gupta2        | 2M | 62k | 62k | irregular sparsity |
-| pwtk          | 11M | 217k | 217k | large, expensive |
-| rma10         | 5M | 46k | 46k | moderately sparse |
+| 1138_bus     | 4,054 | 1,138 | 1,138 | Power Network Problem |
+| BenElechi1   | 13,150,496 | 245,874 | 245,874 | FEM structure |
+| consph        | 6,010,480 | 83,334 | 83,334 | denser |
+| gupta2        | 4,248,286 | 62,064 | 62,064 | irregular sparsity |
+| pwtk          | 11,524,432 | 217,918 | 217,918 | large, expensive |
+| rma10         | 2,329,092 | 46,835 | 46,835 | moderately sparse |
 
 ---
 
