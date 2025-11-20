@@ -53,7 +53,7 @@ As required by the deliverable:
 ## 3. Repository Structure
 
 ```text
-repo/
+PARCO-Computing-2026-242330/
 ├── README.md
 ├── src/
 │   ├── sequentialCode/
