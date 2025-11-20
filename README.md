@@ -4,6 +4,14 @@
 **Course:** Parallel Computing 2025/2026  
 **University:** University of Trento  
 
+![Language](https://img.shields.io/badge/Language-C-blue)
+![OpenMP](https://img.shields.io/badge/OpenMP-Enabled-brightgreen)
+![HPC](https://img.shields.io/badge/HPC-Unitn_Cluster-orange)
+![Reproducibility](https://img.shields.io/badge/Reproducibility-Verified-success)
+![Benchmarks](https://img.shields.io/badge/Benchmarks-10_runs_per_matrix-red)
+![Matrices](https://img.shields.io/badge/Matrices-6_selected-purple)
+![License](https://img.shields.io/badge/License-Free-lightgrey)
+
 ---
 
 ## 1. Project Description
