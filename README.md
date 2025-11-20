@@ -25,7 +25,88 @@ This project implements and evaluates Sparse Matrix–Vector Multiplication (SpM
   - Performance counters through `perf`
   - Cache behaviour through Valgrind Cachegrind
 
+1.1 Reproducibility — Full Setup Script
 
+The following block can be copied as-is into any Linux terminal to fully reproduce the environment, download matrices, compile code, and (optionally) submit PBS jobs on HPC UniTN.
+
+⚠️ NOTE
+
+- On local machines, PBS jobs are skipped automatically.
+- On HPC UniTN, PBS jobs are automatically submitted.
+
+Setup Script
+```bash
+echo "=== 1) Clone repository ==="
+git clone https://github.com/alegrem123/PARCO-Computing-2026-242330.git
+cd PARCO-Computing-2026-242330 || exit 1
+
+echo "=== 2) Download SuiteSparse matrices ==="
+cd mtx
+
+for url in \
+  "https://suitesparse-collection-website.herokuapp.com/MM/HB/1138_bus.tar.gz" \
+  "https://suitesparse-collection-website.herokuapp.com/MM/BenElechi/BenElechi1.tar.gz" \
+  "https://suitesparse-collection-website.herokuapp.com/MM/Williams/consph.tar.gz" \
+  "https://suitesparse-collection-website.herokuapp.com/MM/Gupta/gupta2.tar.gz" \
+  "https://suitesparse-collection-website.herokuapp.com/MM/Boeing/pwtk.tar.gz" \
+  "https://suitesparse-collection-website.herokuapp.com/MM/Bova/rma10.tar.gz"
+do
+  fname=$(basename "$url")
+  dirname="${fname%.tar.gz}"
+
+  echo "Downloading $fname ..."
+  wget "$url"
+
+  echo "Extracting $fname ..."
+  tar -xzf "$fname"
+
+  echo "Cleaning archive..."
+  rm "$fname"
+done
+
+cd ..
+
+echo "=== 3) Compile sequential code ==="
+cd src/sequentialCode
+gcc -std=c99 seqCode.c -o seqCode
+cd ../..
+
+echo "=== 4) Compile parallel code (OpenMP) ==="
+cd src/parallelCode
+gcc -std=c99 -fopenmp parCode.c -o parCode
+cd ../..
+
+echo "=== 5) Submitting PBS jobs (only if running on HPC Unitn) ==="
+
+if [[ "$HOSTNAME" == *"hpc"* ]]; then
+    echo "Detected HPC environment — submitting jobs..."
+
+    cd scripts/seqScript
+    qsub -v L=10 seqCode.pbs
+    qsub -v L=1 valgrind_seq.pbs
+
+    cd ../parScript
+    qsub -v L=10 parCode.pbs
+    qsub -v L=1 perf_par.pbs
+
+    echo "All jobs submitted!"
+else
+    echo "You are NOT on the HPC cluster."
+    echo "Run these manually after ssh:"
+    echo ""
+    echo "Sequential:"
+    echo "  cd scripts/seqScript"
+    echo "  qsub -v L=10 seqCode.pbs"
+    echo "  qsub -v L=1 valgrind_seq.pbs"
+    echo ""
+    echo "Parallel:"
+    echo "  cd scripts/parScript"
+    echo "  qsub -v L=10 parCode.pbs"
+    echo "  qsub -v L=1 perf_par.pbs"
+fi
+
+echo "=== SETUP COMPLETE ==="
+```
 ---
 
 ## 2. Tasks and Objectives
