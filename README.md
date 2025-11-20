@@ -239,18 +239,8 @@ Plots are generated locally using the Python utilities in `/plots` (not included
 
 ---
 
-## 10. Limitations & Future Work
-- GitHub does **not support matrices >100 MB**, so the dataset must be downloaded manually.
-- Future work:
-  - Explore matrix blocking (BCSR)
-  - NUMA-aware schedule
-  - Vectorization with AVX512
-  - Roofline model visualization
-  - Larger datasets to increase parallel scalability
 
----
-
-## 11. How to Download the Matrices
+## 10. How to Download the Matrices
 Since GitHub limits files to 100 MB, users must download the matrices manually:
 
 
