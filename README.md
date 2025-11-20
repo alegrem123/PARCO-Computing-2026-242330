@@ -47,8 +47,6 @@ This queue was selected because the project requires:
 - multiple repeated runs (10× per matrix),
 - access to up to 64 CPU cores for OpenMP evaluation.
 
-The PBS scripts assume the following resources:
-
 
 Setup Script
 ```bash
