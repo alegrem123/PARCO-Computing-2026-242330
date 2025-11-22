@@ -316,7 +316,13 @@ gcc91
 valgrind-3.15.0
 perf
 ```
+### 5.2.1 Actual Compiler Used on Compute Nodes
 
+Although the module gcc91 is loaded for consistency,
+all computations on the HPC UniTN compute nodes are executed with the system compiler:
+```text
+gcc (GCC) 4.8.5 20150623 (Red Hat 4.8.5-44)
+```
 ### 5.3 Compilation
 
 Sequential:
