@@ -1,77 +1,60 @@
 #!/bin/bash
-#PBS -N valgrind_seq                     # Job name for sequential Cachegrind analysis
-#PBS -q short_cpuQ                       # Same queue used in all experiments
-#PBS -o valgrind_seq.out                 # Standard output log
-#PBS -e valgrind_seq.err                 # Standard error log
-#PBS -l select=1:ncpus=1:mem=64gb        # Sequential run: only 1 CPU needed
-#PBS -l walltime=06:00:00                # Safe walltime for large matrices
+#PBS -N valgrind_seq
+#PBS -q short_cpuQ
+#PBS -o valgrind_seq.out
+#PBS -e valgrind_seq.err
+#PBS -l select=1:ncpus=1:mem=64gb
+#PBS -l walltime=06:00:00
 
-module load valgrind-3.15.0             # Cachegrind version used for reproducibility
-module load gcc91                        # Same compiler used in seq and par runs
+module load valgrind-3.15.0
+module load gcc91
 
-echo "PBS workdir: $PBS_O_WORKDIR"
-
-# Compute repository root (one level above scripts/seqScript)
 REPO_DIR="$(dirname $(dirname $PBS_O_WORKDIR))"
-echo "REPO_DIR = $REPO_DIR"
 
-SRC="$REPO_DIR/src/sequentialCode"       # Sequential code directory
-MTX_DIR="$REPO_DIR/mtx"                  # Directory with SuiteSparse matrices
+SRC="$REPO_DIR/src/sequentialCode"
+MTX_DIR="$REPO_DIR/mtx"
 OUTDIR="$REPO_DIR/results/seqResults/benchMarkingCache"
 
 mkdir -p "$OUTDIR"
 
-cd "$SRC" || { echo "Cannot cd to $SRC"; exit 1; }
+cd "$SRC" || exit 1
 
-# Compile the sequential CSR SpMV executable
 gcc -std=c99 seqCode.c -o seqCode
 EXEC="$SRC/seqCode"
 
-# Default number of Cachegrind repetitions (L passed via qsub -v L=…)
 LOOPS="${L:-1}"
 
-echo "Running Valgrind Cachegrind with L = $LOOPS iterations"
-
-# Loop through all matrix folders
 for DIR in "$MTX_DIR"/*; do
-    
-    [ -d "$DIR" ] || continue            # Skip non-directories
+    [ -d "$DIR" ] || continue
+
     base=$(basename "$DIR")
     matrix="$DIR/$base.mtx"
 
-    [ -f "$matrix" ] || continue         # Skip missing .mtx files
+    [ -f "$matrix" ] || continue
 
-    echo "Processing matrix: $base"
-
-    # Repeat Cachegrind measurement LOOPS times
     for ((i=1; i<=LOOPS; i++)); do
-
         OUTCG="${OUTDIR}/cachegrind_${base}_run${i}.out"
         OUTTXT="${OUTDIR}/valgrind_${base}_run${i}.txt"
 
-        # Run Cachegrind (suppress program stdout)
         valgrind --tool=cachegrind \
                  --cachegrind-out-file="$OUTCG" \
                  "$EXEC" "$matrix" &> /dev/null
 
-        # Extract cache miss counters from Cachegrind output
         I1=$(grep "I1  misses:"  "$OUTCG" | awk '{print $4}')
         IL1=$(grep "LLi misses:" "$OUTCG" | awk '{print $4}')
         D1=$(grep "D1  misses:"  "$OUTCG" | awk '{print $4}')
         DL1=$(grep "LLd misses:" "$OUTCG" | awk '{print $4}')
         LL=$(grep "LL  misses:" "$OUTCG" | awk '{print $4}')
 
-        # Save the extracted metrics in a clean summary text file
         {
             echo "Matrix: $base"
             echo "Run: $i"
-            echo "I1_misses:  $I1"        # L1 instruction misses
-            echo "IL1_misses: $IL1"       # Last-level instruction cache misses
-            echo "D1_misses:  $D1"        # L1 data misses
-            echo "DL1_misses: $DL1"       # Last-level data misses
-            echo "LL_misses:  $LL"        # Combined last-level cache misses
+            echo "I1_misses:  $I1"
+            echo "IL1_misses: $IL1"
+            echo "D1_misses:  $D1"
+            echo "DL1_misses: $DL1"
+            echo "LL_misses:  $LL"
         } > "$OUTTXT"
-
     done
 done
 
