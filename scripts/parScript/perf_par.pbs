@@ -1,85 +1,61 @@
 #!/bin/bash
-#PBS -N perf_par                     # Job name for the perf-based analysis
-#PBS -q short_cpuQ                  # Queue used for all experiments
-#PBS -l select=1:ncpus=64:mem=64gb  # One compute node, max 64 CPU cores
-#PBS -l walltime=06:00:00           # Wide walltime, enough for all matrices
-#PBS -o perf_par.out                # Standard output log
-#PBS -e perf_par.err                # Standard error log
+#PBS -N perf_par
+#PBS -q short_cpuQ
+#PBS -l select=1:ncpus=64:mem=64gb
+#PBS -l walltime=06:00:00
+#PBS -o perf_par.out
+#PBS -e perf_par.err
 
-module load perf                     # Load Linux perf for hardware counters
-module load gcc91                    # Same compiler used across all benchmarks
+module load perf
+module load gcc91
 
-echo "PBS working directory: $PBS_O_WORKDIR"
-
-# Compute project root (one level above scripts/perScript/)
 REPO_DIR="$(dirname $(dirname $PBS_O_WORKDIR))"
-echo "REPO_DIR = $REPO_DIR"
 
-SRC="$REPO_DIR/src/parallelCode"     # Directory containing parCode.c
-MTX="$REPO_DIR/mtx"                  # SuiteSparse matrices directory
+SRC="$REPO_DIR/src/parallelCode"
+MTX="$REPO_DIR/mtx"
 OUTDIR="$REPO_DIR/results/parResults/benchMarkingCache"
 
-mkdir -p "$OUTDIR"                   # Make sure output folder exists
+mkdir -p "$OUTDIR"
 
-cd "$SRC" || { echo "Cannot cd to $SRC"; exit 1; }
+cd "$SRC" || exit 1
 
-# Compile the parallel CSR SpMV code
 gcc -fopenmp -std=c99 parCode.c -o parCode
 EXEC="$SRC/parCode"
 
-# Number of SpMV repetitions (passed by qsub -v L=…)
 if [ -z "$L" ]; then
-    echo "ERROR: Missing L loops variable. Use: qsub -v L=10 perf_par.pbs"
     exit 1
 fi
 export LOOPS=$L
 
-# Output CSV header for all perf hardware counters
 echo "matrix,threads,schedule,chunk,cycles,instructions,cache_misses,branches,branch_misses" \
     > "$OUTDIR/perf_parallel.csv"
 
-# Thread counts required by the assignment
 THREADS=(2 4 8 16 32 64)
-
-# Scheduling strategies evaluated
 SCHEDULES=("static" "dynamic" "guided" "auto")
-
-# Chunk sizes for static/dynamic/guided (auto ignores chunk)
 CHUNKS=(10 100 1000)
 
-# Loop over all matrices available in mtx/
 for DIR in "$MTX"/*; do
-
-    [ -d "$DIR" ] || continue          # Skip non-folders
+    [ -d "$DIR" ] || continue
 
     base=$(basename "$DIR")
     matrix="$DIR/$base.mtx"
+    [ -f "$matrix" ] || continue
 
-    [ -f "$matrix" ] || continue       # Skip if .mtx file missing
-
-    # Sweep thread counts
     for t in "${THREADS[@]}"; do
         export OMP_NUM_THREADS=$t
 
-        # Sweep OpenMP scheduling policies
         for sched in "${SCHEDULES[@]}"; do
 
             if [[ "$sched" == "auto" ]]; then
-                # Auto schedule → no chunk parameter
                 export OMP_SCHEDULE="auto"
 
-                # Run perf hardware counters on the parallel code
                 perf stat -x, -e cycles,instructions,cache-misses,branches,branch-misses \
                     "$EXEC" "$matrix" 2> tmp_perf.txt
 
-                # Extract only the counter values (first column)
                 vals=$(cut -d',' -f1 tmp_perf.txt | paste -sd"," -)
-
-                # Write row in CSV
                 echo "$base,$t,auto,auto,$vals" >> "$OUTDIR/perf_parallel.csv"
 
             else
-                # For static/dynamic/guided sweep across chunk sizes
                 for chunk in "${CHUNKS[@]}"; do
                     export OMP_SCHEDULE="$sched,$chunk"
 
@@ -90,10 +66,9 @@ for DIR in "$MTX"/*; do
                     echo "$base,$t,$sched,$chunk,$vals" >> "$OUTDIR/perf_parallel.csv"
                 done
             fi
-
         done
     done
 done
 
-rm -f tmp_perf.txt                   # Remove temporary perf output
+rm -f tmp_perf.txt
 echo "DONE."
