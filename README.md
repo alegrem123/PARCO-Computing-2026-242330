@@ -153,12 +153,12 @@ cd ..
 
 Sequential:
 ```bash
-gcc -std=c99 src/sequentialCode/seqCode.c -o seq
+gcc -std=c99 src/sequentialCode/seqCode.c -o seqCode
 ```
 
 Parallel (OpenMP):
 ```bash
-gcc -std=c99 -fopenmp src/parallelCode/parCode.c -o par
+gcc -std=c99 -fopenmp src/parallelCode/parCode.c -o parCode
 ```
 4. Run locally
 Sequential
