@@ -39,7 +39,6 @@ All batch jobs were executed on the **public queue `short_cpuQ`**, which provide
 
 - Max walltime: **6 hours**
 - Max concurrent jobs: **30**
-- Access: free (public queue)
 - Suitable for: medium-size workloads and benchmarking runs
 
 This queue was selected because the project requires:
@@ -392,39 +391,5 @@ All matrices are from the SuiteSparse Matrix Collection:
 
 ---
 
-## 9. Discussion
-- Small matrices (e.g., **1138_bus**) do **not benefit** from parallelism due to parallel overhead.
-- Medium and large matrices show meaningful speedups, especially with:
-  - **static scheduling** for balanced and regular matrices  
-  - **dynamic/guided** for irregular matrices (e.g., gupta2)
-- Bottlenecks:
-  - SpMV is **memory-bound** on all matrices  
-  - Perf and Cachegrind confirm high LLC miss rates  
-  - Parallel speedup limited by memory bandwidth saturation  
-
----
 
 
-## 10. How to Download the Matrices
-Since GitHub limits files to 100 MB, users must download the matrices manually:
-
-
-```bash
-cd mtx
-for url in \
-"https://suitesparse-collection-website.herokuapp.com/MM/Gupta/gupta2.tar.gz" \
-"https://suitesparse-collection-website.herokuapp.com/MM/Williams/consph.tar.gz" \
-"https://suitesparse-collection-website.herokuapp.com/MM/BenElechi/BenElechi1.tar.gz" \
-"https://suitesparse-collection-website.herokuapp.com/MM/Boeing/pwtk.tar.gz" \
-"https://suitesparse-collection-website.herokuapp.com/MM/Bova/rma10.tar.gz"
-do
-    name=$(basename "$url" .tar.gz)
-    wget "$url" -O "$name.tar.gz"
-    tar -xzf "$name.tar.gz"
-    mkdir -p "$name"
-    mv "$name/$name.mtx" "$name/"
-    rm -rf "$name.tar.gz"
-done
-
-
-```
