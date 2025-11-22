@@ -1,61 +1,44 @@
 #!/bin/bash
-#PBS -N seqCode                         # Job name for sequential SpMV benchmark
-#PBS -o seqCode.out                    # Standard output log
-#PBS -e seqCode.err                    # Standard error log
-#PBS -q short_cpuQ                     # Queue used for all SpMV experiments
-#PBS -l select=1:ncpus=1:mem=64gb      # Run on 1 CPU (sequential baseline)
-#PBS -l walltime=06:00:00              # Generous walltime for all matrices
+#PBS -N seqCode
+#PBS -o seqCode.out
+#PBS -e seqCode.err
+#PBS -q short_cpuQ
+#PBS -l select=1:ncpus=1:mem=64gb
+#PBS -l walltime=06:00:00
 
-module load gcc91                      # Same compiler used across all tests
+module load gcc91
 
-echo "PBS workdir: $PBS_O_WORKDIR"
-
-# Determine repository root (one level above scripts/seqScript)
 REPO_DIR="$(dirname $(dirname $PBS_O_WORKDIR))"
-echo "REPO_DIR = $REPO_DIR"
 
-SRC="$REPO_DIR/src/sequentialCode"     # Directory containing seqCode.c
-MTX="$REPO_DIR/mtx"                    # Directory with all SuiteSparse matrices
+SRC="$REPO_DIR/src/sequentialCode"
+MTX="$REPO_DIR/mtx"
 OUTDIR="$REPO_DIR/results/seqResults/benchMarking"
 
 mkdir -p "$OUTDIR"
 OUTFILE="$OUTDIR/results_sequential.csv"
 
-cd "$SRC" || { echo "Cannot cd to $SRC"; exit 1; }
+cd "$SRC" || exit 1
 
-# Compile the sequential CSR SpMV implementation
 gcc -std=c99 seqCode.c -o seqCode
 
-# Number of repetitions (default = 1 if L is not passed through qsub -v L=…)
 LOOPS="${L:-1}"
 
-# CSV header (matrix name, repetition ID, time in ms, checksum for correctness)
 echo "matrix,run,time_ms,checksum" > "$OUTFILE"
 
-# Loop through all matrix folders inside mtx/
 for DIR in "$MTX"/*; do
-    
-    [ -d "$DIR" ] || continue          # Skip non-directories
-    
+    [ -d "$DIR" ] || continue
+
     base=$(basename "$DIR")
     matrix="$DIR/$base.mtx"
 
-    [ -f "$matrix" ] || continue       # Skip if matrix file does not exist
+    [ -f "$matrix" ] || continue
 
-    # Perform LOOPS sequential runs for each matrix
     for ((i=1; i<=LOOPS; i++)); do
-
-        # Execute sequential SpMV
         OUT=$("./seqCode" "$matrix")
-
-        # Extract wall-clock time and checksum printed by seqCode
         TIME=$(echo "$OUT" | grep "SpMV time" | awk '{print $3}')
         CHECKSUM=$(echo "$OUT" | grep "Checksum" | awk '{print $2}')
-
-        # Append result to the CSV
         echo "$base,$i,$TIME,$CHECKSUM" >> "$OUTFILE"
     done
-
 done
 
 echo "DONE."
