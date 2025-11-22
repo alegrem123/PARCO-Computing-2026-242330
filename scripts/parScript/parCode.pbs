@@ -1,33 +1,36 @@
 #!/bin/bash
-#PBS -N parCode
-#PBS -q short_cpuQ
-#PBS -o parCode.out
-#PBS -e parCode.err
-#PBS -l select=1:ncpus=64:mem=64gb
-#PBS -l walltime=06:00:00
+#PBS -N parCode                      # Job name
+#PBS -q short_cpuQ                   # Queue used for all experiments
+#PBS -o parCode.out                  # Standard output file
+#PBS -e parCode.err                  # Standard error file
+#PBS -l select=1:ncpus=64:mem=64gb   # Single node, up to 64 CPU cores
+#PBS -l walltime=06:00:00            # Max walltime allowed for the whole sweep
 
-module load gcc91
+module load gcc91                    # Compiler module used for reproducibility
 
 echo "PBS working directory: $PBS_O_WORKDIR"
 
-# Repository root = directory sopra scripts/parScript
+# The repo root is one directory above scripts/parScript/
 REPO_DIR="$(dirname $(dirname $PBS_O_WORKDIR))"
 echo "REPO_DIR = $REPO_DIR"
 
-SRC="$REPO_DIR/src/parallelCode"
-MTX="$REPO_DIR/mtx"
+SRC="$REPO_DIR/src/parallelCode"     # Path to the parallel code
+MTX="$REPO_DIR/mtx"                  # Directory containing all matrices
 OUTDIR="$REPO_DIR/results/parResults/benchMarking"
 
-mkdir -p "$OUTDIR"
+mkdir -p "$OUTDIR"                   # Ensure output directory exists
 
 cd "$SRC" || { echo "Cannot cd to $SRC"; exit 1; }
 
+# Compile the OpenMP code (no manual optimisation flags, same as project spec)
 gcc -std=c99 -fopenmp parCode.c -o parCode
 EXEC="$SRC/parCode"
 
+# Control thread affinity: bind threads to cores for repeatability
 export OMP_PROC_BIND=close
 export OMP_PLACES=cores
 
+# L = number of SpMV iterations printed by the code
 if [ -z "$L" ]; then
     echo "ERROR: missing loop count L. Use: qsub -v L=10 parCode.pbs"
     exit 1
@@ -35,16 +38,23 @@ fi
 
 export LOOPS=$L
 
+# Thread counts required by the assignment
 THREADS=(2 4 8 16 32 64)
+
+# Scheduling policies explored
 SCHEDULES=("static" "dynamic" "guided" "auto")
+
+# Chunk sizes applied to static/dynamic/guided (not used for auto)
 CHUNKS=(10 100 1000)
 
+# Sweep across thread counts, matrices, schedules, and chunk sizes
 for T in "${THREADS[@]}"; do
     export OMP_NUM_THREADS=$T
 
     OUTFILE="$OUTDIR/results_parallel_${T}thr.csv"
     echo "matrix,schedule,chunk,time_ms,threads" > "$OUTFILE"
 
+    # Iterate over all SuiteSparse matrices in the mtx/ directory
     for DIR in "$MTX"/*; do
         [ -d "$DIR" ] || continue
         BASE=$(basename "$DIR")
@@ -52,16 +62,20 @@ for T in "${THREADS[@]}"; do
 
         [ -f "$MATRIX" ] || continue
 
+        # Sweep all scheduling strategies
         for SCHED in "${SCHEDULES[@]}"; do
 
             if [[ "$SCHED" == "auto" ]]; then
+                # Auto schedule → no chunk size parameter
                 export OMP_SCHEDULE="auto"
 
+                # Run the executable and extract the printed SpMV time
                 $EXEC "$MATRIX" | grep "SpMV time" | awk \
                   -v M="$BASE" -v S="$SCHED" -v C="auto" -v T="$T" \
                   '{print M "," S "," C "," $3 "," T}' >> "$OUTFILE"
 
             else
+                # For static/dynamic/guided evaluate multiple chunk sizes
                 for CH in "${CHUNKS[@]}"; do
                     export OMP_SCHEDULE="$SCHED,$CH"
 
@@ -76,4 +90,3 @@ for T in "${THREADS[@]}"; do
 done
 
 echo "DONE."
-
